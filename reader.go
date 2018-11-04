@@ -107,20 +107,20 @@ const (
 const pngHeader = "\x89PNG\r\n\x1a\n"
 
 type decoder struct {
-	r io.Reader
-	num_frames          uint32
-	num_plays           uint32
-	frame_index         int
-	frames              []Frame
-	crc                 hash.Hash32
+	r             io.Reader
+	num_frames    uint32
+	num_plays     uint32
+	frame_index   int
+	frames        []Frame
+	crc           hash.Hash32
 	width, height int
-	depth      int
-	palette    color.Palette
-	cb         int
-	stage      int
-	idatLength uint32
-	tmp        [3 * 256]byte
-	interlace  int
+	depth         int
+	palette       color.Palette
+	cb            int
+	stage         int
+	idatLength    uint32
+	tmp           [3 * 256]byte
+	interlace     int
 
 	// useTransparent and transparent are used for grayscale and truecolor
 	// transparency, as opposed to palette transparency.

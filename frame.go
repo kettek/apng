@@ -10,15 +10,15 @@ import (
 
 // dispose_op values, as per the APNG spec.
 const (
-	DISPOSE_OP_NONE	= 0
+	DISPOSE_OP_NONE       = 0
 	DISPOSE_OP_BACKGROUND = 1
-	DISPOSE_OP_PREVIOUS = 2
+	DISPOSE_OP_PREVIOUS   = 2
 )
 
 // blend_op values, as per the APNG spec.
 const (
 	BLEND_OP_SOURCE = 0
-	BLEND_OP_OVER = 1
+	BLEND_OP_OVER   = 1
 )
 
 type Frame struct {
@@ -31,6 +31,7 @@ type Frame struct {
 	blend_op           byte
 	is_default         bool
 }
+
 // IsDefault indicates if the Frame is a default image that
 // should not be used in the animation. IsDefault() may only
 // return true on the first frame.
