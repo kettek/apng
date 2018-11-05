@@ -4,11 +4,11 @@ This `apng` package provides methods for decoding APNG files.
 If a regular PNG file is read, the first Frame as returned by `Decode(*File)` will be the PNG data.
 
 ## Methods
-### Decode(*File) APNG
-This method returns a slice of `Frame`s.
+### DecodeAll(*File) (APNG, error)
+This method returns an APNG type containing the frames and associated data within the passed file.
 
-### DecodeFirst(*File) APNG
-This method returns the Image of the first `Frame` of an APNG.
+### DecodeFirst(*File) (image.Image, error)
+This method returns the Image of the default frame of an APNG file.
 
 ## Types
 ### APNG
@@ -47,7 +47,7 @@ func main() {
     panic(err)
   }
   defer f.Close()
-  a, err := apng.Decode(f)
+  a, err := apng.DecodeAll(f)
   if err != nil {
     panic(err)
   }

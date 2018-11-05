@@ -1039,11 +1039,11 @@ func (d *decoder) checkHeader() error {
 	return nil
 }
 
-// Decode reads an APNG image from r and returns it as a slice of
-// Frames. If the first frame returns true for IsDefault(), that
+// Decode reads an APNG file from r and returns it as an APNG
+// Type. If the first frame returns true for IsDefault(), that
 // frame should not be part of the a.
 // The type of Image returned depends on the PNG contents.
-func Decode(r io.Reader) (APNG, error) {
+func DecodeAll(r io.Reader) (APNG, error) {
 	d := &decoder{
 		r:           r,
 		crc:         crc32.NewIEEE(),
@@ -1068,10 +1068,9 @@ func Decode(r io.Reader) (APNG, error) {
 	return d.a, nil
 }
 
-// Decode reads an APNG image from r and returns the default
-// image.
-func DecodeFirst(r io.Reader) (image.Image, error) {
-	a, err := Decode(r)
+// Decode reads an APNG file from r and returns the default image.
+func Decode(r io.Reader) (image.Image, error) {
+	a, err := DecodeAll(r)
 	if err != nil {
 		return nil, err
 	}
@@ -1135,5 +1134,5 @@ func DecodeConfig(r io.Reader) (image.Config, error) {
 }
 
 func init() {
-	image.RegisterFormat("apng", pngHeader, DecodeFirst, DecodeConfig)
+	image.RegisterFormat("apng", pngHeader, Decode, DecodeConfig)
 }
