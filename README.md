@@ -35,7 +35,7 @@ The Frame type contains an individual frame of an APNG. The following table prov
 | YOffset int               | Returns the y offset of the frame. |
 | DelayNumerator int        | Returns the delay numerator.       |
 | DelayDenominator int      | Returns the delay denominator.     |
-| DisposalOp byte           | Returns the frame disposal operation. May be `apng.DISPOSE_OP_NONE`, `apng.DISPOSE_OP_BACKGROUND`, or `apng.DISPOSE_OP_PREVIOUS`. See the [APNG Specification](https://wiki.mozilla.org/APNG_Specification#.60fcTL.60:_The_Frame_Control_Chunk) for more information. |
+| DisposeOp byte           | Returns the frame disposal operation. May be `apng.DISPOSE_OP_NONE`, `apng.DISPOSE_OP_BACKGROUND`, or `apng.DISPOSE_OP_PREVIOUS`. See the [APNG Specification](https://wiki.mozilla.org/APNG_Specification#.60fcTL.60:_The_Frame_Control_Chunk) for more information. |
 | BlendOp byte              | Returns the frame blending operation. May be `apng.BLEND_OP_SOURCE` or `apng.BLEND_OP_OVER`. See the [APNG Specification](https://wiki.mozilla.org/APNG_Specification#.60fcTL.60:_The_Frame_Control_Chunk) for more information. |
 
 ## Example
