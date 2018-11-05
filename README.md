@@ -1,14 +1,19 @@
 # APNG golang library
-This `apng` package provides methods for decoding APNG files.
+This `apng` package provides methods for decoding and encoding APNG files.
+
+**NOTE**: The decoder should work for most anything you throw at it. The encoder currently doesn't handle differences of Image formats and similar and has not been tested as thoroughly.
 
 If a regular PNG file is read, the first Frame as returned by `Decode(*File)` will be the PNG data.
 
 ## Methods
-### DecodeAll(*File) (APNG, error)
+### DecodeAll(io.Reader) (APNG, error)
 This method returns an APNG type containing the frames and associated data within the passed file.
 
-### DecodeFirst(*File) (image.Image, error)
+### DecodeFirst(io.Reader) (image.Image, error)
 This method returns the Image of the default frame of an APNG file.
+
+### Encode(io.Writer, APNG) error
+This method writes the passed APNG object to the given io.Writer as an APNG binary file.
 
 ## Types
 ### APNG
