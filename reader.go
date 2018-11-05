@@ -109,9 +109,8 @@ const pngHeader = "\x89PNG\r\n\x1a\n"
 type decoder struct {
 	r             io.Reader
 	num_frames    uint32
-	num_plays     uint32
+  a             APNG
 	frame_index   int
-	frames        []Frame
 	crc           hash.Hash32
 	width, height int
 	depth         int
@@ -232,7 +231,7 @@ func (d *decoder) parseIHDR(length uint32) error {
 	if d.cb == cbInvalid {
 		return UnsupportedError(fmt.Sprintf("bit depth %d, color type %d", d.tmp[8], d.tmp[9]))
 	}
-	d.frames[0].width, d.frames[0].height = int(w), int(h)
+	d.a.Frames[0].width, d.a.Frames[0].height = int(w), int(h)
 	return d.verifyChecksum()
 }
 
@@ -351,7 +350,7 @@ func (d *decoder) Read(p []byte) (int, error) {
 		if _, err := io.ReadFull(d.r, d.tmp[:8]); err != nil {
 			return 0, err
 		}
-		if d.frames[d.frame_index].is_default {
+		if d.a.Frames[d.frame_index].IsDefault {
 			d.idatLength = binary.BigEndian.Uint32(d.tmp[:4])
 			if string(d.tmp[4:8]) != "IDAT" {
 				return 0, FormatError("not enough pixel data")
@@ -364,7 +363,7 @@ func (d *decoder) Read(p []byte) (int, error) {
 		}
 		d.crc.Reset()
 		d.crc.Write(d.tmp[4:8])
-		if !d.frames[d.frame_index].is_default {
+		if !d.a.Frames[d.frame_index].IsDefault {
 			if _, err := io.ReadFull(d.r, d.tmp[:4]); err != nil {
 				return 0, err
 			}
@@ -444,8 +443,8 @@ func (d *decoder) readImagePass(r io.Reader, pass int, allocateOnly bool) (image
 		width    int
 		height   int
 	)
-	width = d.frames[d.frame_index].width
-	height = d.frames[d.frame_index].height
+	width = d.a.Frames[d.frame_index].width
+	height = d.a.Frames[d.frame_index].height
 	if d.interlace == itAdam7 && !allocateOnly {
 		p := interlacing[pass]
 		// Add the multiplication factor and subtract one, effectively rounding up.
@@ -873,7 +872,7 @@ func (d *decoder) parseacTL(length uint32) (err error) {
 	}
 
 	d.num_frames = binary.BigEndian.Uint32(d.tmp[:4])
-	d.num_plays = binary.BigEndian.Uint32(d.tmp[4:8])
+  d.a.LoopCount = uint(binary.BigEndian.Uint32(d.tmp[4:8]))
 
 	d.crc.Write(d.tmp[:8])
 	return d.verifyChecksum()
@@ -890,19 +889,19 @@ func (d *decoder) parsefcTL(length uint32) (err error) {
 	if d.stage >= dsSeenIDAT {
 		d.frame_index = d.frame_index + 1
 	} else {
-		d.frames[d.frame_index].is_default = false
+		d.a.Frames[d.frame_index].IsDefault = false
 	}
-	if d.frame_index >= len(d.frames) {
-		d.frames = append(d.frames, Frame{})
+	if d.frame_index >= len(d.a.Frames) {
+    d.a.Frames = append(d.a.Frames, Frame{})
 	}
-	d.frames[d.frame_index].width = int(int32(binary.BigEndian.Uint32(d.tmp[4:8])))
-	d.frames[d.frame_index].height = int(int32(binary.BigEndian.Uint32(d.tmp[8:12])))
-	d.frames[d.frame_index].x_offset = int(binary.BigEndian.Uint32(d.tmp[12:16]))
-	d.frames[d.frame_index].y_offset = int(binary.BigEndian.Uint32(d.tmp[16:20]))
-	d.frames[d.frame_index].delay_num = binary.BigEndian.Uint16(d.tmp[20:22])
-	d.frames[d.frame_index].delay_den = binary.BigEndian.Uint16(d.tmp[22:24])
-	d.frames[d.frame_index].dispose_op = byte(d.tmp[24])
-	d.frames[d.frame_index].blend_op = byte(d.tmp[25])
+	d.a.Frames[d.frame_index].width = int(int32(binary.BigEndian.Uint32(d.tmp[4:8])))
+	d.a.Frames[d.frame_index].height = int(int32(binary.BigEndian.Uint32(d.tmp[8:12])))
+	d.a.Frames[d.frame_index].XOffset = int(binary.BigEndian.Uint32(d.tmp[12:16]))
+	d.a.Frames[d.frame_index].YOffset = int(binary.BigEndian.Uint32(d.tmp[16:20]))
+	d.a.Frames[d.frame_index].DelayNumerator = binary.BigEndian.Uint16(d.tmp[20:22])
+	d.a.Frames[d.frame_index].DelayDenominator = binary.BigEndian.Uint16(d.tmp[22:24])
+	d.a.Frames[d.frame_index].DisposeOp = byte(d.tmp[24])
+	d.a.Frames[d.frame_index].BlendOp = byte(d.tmp[25])
 
 	d.crc.Write(d.tmp[:26])
 	return d.verifyChecksum()
@@ -914,7 +913,7 @@ func (d *decoder) parsefdAT(length uint32) (err error) {
 	}
 	d.crc.Write(d.tmp[:4])
 	d.idatLength = length - 4
-	d.frames[d.frame_index].Img, err = d.decode()
+	d.a.Frames[d.frame_index].Img, err = d.decode()
 	if err != nil {
 		return err
 	}
@@ -923,7 +922,7 @@ func (d *decoder) parsefdAT(length uint32) (err error) {
 
 func (d *decoder) parseIDAT(length uint32) (err error) {
 	d.idatLength = length
-	d.frames[d.frame_index].Img, err = d.decode()
+	d.a.Frames[d.frame_index].Img, err = d.decode()
 	if err != nil {
 		return err
 	}
@@ -1042,41 +1041,41 @@ func (d *decoder) checkHeader() error {
 
 // Decode reads an APNG image from r and returns it as a slice of
 // Frames. If the first frame returns true for IsDefault(), that
-// frame should not be part of the animation.
+// frame should not be part of the a.
 // The type of Image returned depends on the PNG contents.
-func Decode(r io.Reader) ([]Frame, error) {
+func Decode(r io.Reader) (APNG, error) {
 	d := &decoder{
 		r:           r,
 		crc:         crc32.NewIEEE(),
 		frame_index: 0,
-		frames:      make([]Frame, 1),
+    a:   APNG{ Frames: make([]Frame, 1)},
 	}
-	d.frames[0].is_default = true
+	d.a.Frames[0].IsDefault = true
 	if err := d.checkHeader(); err != nil {
 		if err == io.EOF {
 			err = io.ErrUnexpectedEOF
 		}
-		return nil, err
+		return d.a, err
 	}
 	for d.stage != dsSeenIEND {
 		if err := d.parseChunk(); err != nil {
 			if err == io.EOF {
 				err = io.ErrUnexpectedEOF
 			}
-			return nil, err
+			return d.a, err
 		}
 	}
-	return d.frames, nil
+	return d.a, nil
 }
 
 // Decode reads an APNG image from r and returns the default
 // image.
 func DecodeFirst(r io.Reader) (image.Image, error) {
-	d, err := Decode(r)
+	a, err := Decode(r)
 	if err != nil {
 		return nil, err
 	}
-	return d[0].Img, nil
+	return a.Frames[0].Img, nil
 }
 
 // DecodeConfig returns the color model and dimensions of a PNG image without
@@ -1130,8 +1129,8 @@ func DecodeConfig(r io.Reader) (image.Config, error) {
 	}
 	return image.Config{
 		ColorModel: cm,
-		Width:      int(d.frames[0].width),
-		Height:     int(d.frames[0].height),
+		Width:      int(d.a.Frames[0].width),
+		Height:     int(d.a.Frames[0].height),
 	}, nil
 }
 

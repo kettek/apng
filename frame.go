@@ -24,41 +24,24 @@ const (
 type Frame struct {
 	Img                image.Image
 	width, height      int
-	x_offset, y_offset int
-	delay_num          uint16
-	delay_den          uint16
-	dispose_op         byte
-	blend_op           byte
-	is_default         bool
+  XOffset, YOffset   int
+  DelayNumerator     uint16
+  DelayDenominator   uint16
+  DisposeOp          byte
+  BlendOp            byte
+  // IsDefault indicates if the Frame is a default image that
+  // should not be used in the animation. IsDefault can only
+  // be true on the first frame.
+  IsDefault          bool
 }
 
-// IsDefault indicates if the Frame is a default image that
-// should not be used in the animation. IsDefault() may only
-// return true on the first frame.
-func (f *Frame) IsDefault() bool {
-	return f.is_default
-}
-func (f *Frame) GetWidth() int {
-	return f.width
-}
-func (f *Frame) GetHeight() int {
-	return f.height
-}
-func (f *Frame) GetXOffset() int {
-	return f.x_offset
-}
-func (f *Frame) GetYOffset() int {
-	return f.y_offset
-}
-func (f *Frame) GetDelayNumerator() int {
-	return int(f.delay_num)
-}
-func (f *Frame) GetDelayDenominator() int {
-	return int(f.delay_den)
-}
-func (f *Frame) GetDisposal() byte {
-	return f.dispose_op
-}
-func (f *Frame) GetBlend() byte {
-	return f.blend_op
+// GetDelay returns the number of seconds in the frame.
+func (f *Frame) GetDelay() float64 {
+  d := uint16(0)
+  if f.DelayDenominator == 0 {
+    d = 100
+  } else {
+    d = f.DelayDenominator
+  }
+  return float64(f.DelayNumerator) / float64(d)
 }
