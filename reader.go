@@ -109,7 +109,7 @@ const pngHeader = "\x89PNG\r\n\x1a\n"
 type decoder struct {
 	r             io.Reader
 	num_frames    uint32
-  a             APNG
+	a             APNG
 	frame_index   int
 	crc           hash.Hash32
 	width, height int
@@ -872,7 +872,7 @@ func (d *decoder) parseacTL(length uint32) (err error) {
 	}
 
 	d.num_frames = binary.BigEndian.Uint32(d.tmp[:4])
-  d.a.LoopCount = uint(binary.BigEndian.Uint32(d.tmp[4:8]))
+	d.a.LoopCount = uint(binary.BigEndian.Uint32(d.tmp[4:8]))
 
 	d.crc.Write(d.tmp[:8])
 	return d.verifyChecksum()
@@ -892,7 +892,7 @@ func (d *decoder) parsefcTL(length uint32) (err error) {
 		d.a.Frames[d.frame_index].IsDefault = false
 	}
 	if d.frame_index >= len(d.a.Frames) {
-    d.a.Frames = append(d.a.Frames, Frame{})
+		d.a.Frames = append(d.a.Frames, Frame{})
 	}
 	d.a.Frames[d.frame_index].width = int(int32(binary.BigEndian.Uint32(d.tmp[4:8])))
 	d.a.Frames[d.frame_index].height = int(int32(binary.BigEndian.Uint32(d.tmp[8:12])))
@@ -1048,7 +1048,7 @@ func DecodeAll(r io.Reader) (APNG, error) {
 		r:           r,
 		crc:         crc32.NewIEEE(),
 		frame_index: 0,
-    a:   APNG{ Frames: make([]Frame, 1)},
+		a:           APNG{Frames: make([]Frame, 1)},
 	}
 	d.a.Frames[0].IsDefault = true
 	if err := d.checkHeader(); err != nil {

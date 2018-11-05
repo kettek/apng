@@ -39,21 +39,21 @@ type EncoderBufferPool interface {
 type EncoderBuffer encoder
 
 type encoder struct {
-	enc     *Encoder
-	w       io.Writer
-  a       APNG
-  write_type int // 0 = IDAT, 1 = fdAT
-  seq     int
-	cb      int
-	err     error
-	header  [8]byte
-	footer  [4]byte
-	tmp     [4 * 256]byte
-	cr      [nFilter][]uint8
-	pr      []uint8
-	zw      *zlib.Writer
-	zwLevel int
-	bw      *bufio.Writer
+	enc        *Encoder
+	w          io.Writer
+	a          APNG
+	write_type int // 0 = IDAT, 1 = fdAT
+	seq        int
+	cb         int
+	err        error
+	header     [8]byte
+	footer     [4]byte
+	tmp        [4 * 256]byte
+	cr         [nFilter][]uint8
+	pr         []uint8
+	zw         *zlib.Writer
+	zwLevel    int
+	bw         *bufio.Writer
 }
 
 type CompressionLevel int
@@ -171,28 +171,28 @@ func (e *encoder) writeIHDR() {
 }
 
 func (e *encoder) writeacTL() {
-  binary.BigEndian.PutUint32(e.tmp[0:4], uint32(len(e.a.Frames)))
-  binary.BigEndian.PutUint32(e.tmp[4:8], uint32(e.a.LoopCount))
-  e.writeChunk(e.tmp[:8], "acTL")
+	binary.BigEndian.PutUint32(e.tmp[0:4], uint32(len(e.a.Frames)))
+	binary.BigEndian.PutUint32(e.tmp[4:8], uint32(e.a.LoopCount))
+	e.writeChunk(e.tmp[:8], "acTL")
 }
 
 func (e *encoder) writefcTL(f Frame) {
-  binary.BigEndian.PutUint32(e.tmp[0:4], uint32(e.seq))
-  e.seq = e.seq + 1
+	binary.BigEndian.PutUint32(e.tmp[0:4], uint32(e.seq))
+	e.seq = e.seq + 1
 	b := f.Img.Bounds()
-  binary.BigEndian.PutUint32(e.tmp[4:8], uint32(b.Dx()))
+	binary.BigEndian.PutUint32(e.tmp[4:8], uint32(b.Dx()))
 	binary.BigEndian.PutUint32(e.tmp[8:12], uint32(b.Dy()))
-  binary.BigEndian.PutUint32(e.tmp[12:16], uint32(f.XOffset))
-  binary.BigEndian.PutUint32(e.tmp[16:20], uint32(f.YOffset))
-  binary.BigEndian.PutUint16(e.tmp[20:22], uint16(f.DelayNumerator))
-  binary.BigEndian.PutUint16(e.tmp[22:24], uint16(f.DelayDenominator))
-  e.tmp[24] = f.DisposeOp
-  e.tmp[25] = f.BlendOp
-  e.writeChunk(e.tmp[:26], "fcTL")
+	binary.BigEndian.PutUint32(e.tmp[12:16], uint32(f.XOffset))
+	binary.BigEndian.PutUint32(e.tmp[16:20], uint32(f.YOffset))
+	binary.BigEndian.PutUint16(e.tmp[20:22], uint16(f.DelayNumerator))
+	binary.BigEndian.PutUint16(e.tmp[22:24], uint16(f.DelayDenominator))
+	e.tmp[24] = f.DisposeOp
+	e.tmp[25] = f.BlendOp
+	e.writeChunk(e.tmp[:26], "fcTL")
 }
 
 func (e *encoder) writefdATs(f Frame) {
-  e.write_type = 1
+	e.write_type = 1
 	if e.err != nil {
 		return
 	}
@@ -237,15 +237,15 @@ func (e *encoder) writePLTEAndTRNS(p color.Palette) {
 // This method should only be called from writeIDATs (via writeImage).
 // No other code should treat an encoder as an io.Writer.
 func (e *encoder) Write(b []byte) (int, error) {
-  if e.write_type == 0 {
-	  e.writeChunk(b, "IDAT")
-  } else {
-    c := make([]byte, 4)
-    binary.BigEndian.PutUint32(c[0:4], uint32(e.seq))
-    e.seq = e.seq + 1
-    b = append(c, b...)
-	  e.writeChunk(b, "fdAT")
-  }
+	if e.write_type == 0 {
+		e.writeChunk(b, "IDAT")
+	} else {
+		c := make([]byte, 4)
+		binary.BigEndian.PutUint32(c[0:4], uint32(e.seq))
+		e.seq = e.seq + 1
+		b = append(c, b...)
+		e.writeChunk(b, "fdAT")
+	}
 	if e.err != nil {
 		return 0, e.err
 	}
@@ -571,7 +571,7 @@ func (e *encoder) writeImage(w io.Writer, m image.Image, cb int, level int) erro
 
 // Write the actual image data to one or more IDAT chunks.
 func (e *encoder) writeIDATs() {
-  e.write_type = 0
+	e.write_type = 0
 	if e.err != nil {
 		return
 	}
@@ -638,7 +638,7 @@ func (enc *Encoder) Encode(w io.Writer, a APNG) error {
 
 	e.enc = enc
 	e.w = w
-  e.a = a
+	e.a = a
 
 	var pal color.Palette
 	// cbP8 encoding needs PalettedImage's ColorIndexAt method.
@@ -681,19 +681,19 @@ func (enc *Encoder) Encode(w io.Writer, a APNG) error {
 	if pal != nil {
 		e.writePLTEAndTRNS(pal)
 	}
-  if len(e.a.Frames) > 1 {
-    e.writeacTL()
-  }
-  if (!e.a.Frames[0].IsDefault) {
-    e.writefcTL(e.a.Frames[0])
-  }
+	if len(e.a.Frames) > 1 {
+		e.writeacTL()
+	}
+	if !e.a.Frames[0].IsDefault {
+		e.writefcTL(e.a.Frames[0])
+	}
 	e.writeIDATs()
-  for i := 0; i < len(e.a.Frames); i = i + 1 {
-    if i != 0 && !e.a.Frames[i].IsDefault {
-      e.writefcTL(e.a.Frames[i])
-      e.writefdATs(e.a.Frames[i])
-    }
-  }
+	for i := 0; i < len(e.a.Frames); i = i + 1 {
+		if i != 0 && !e.a.Frames[i].IsDefault {
+			e.writefcTL(e.a.Frames[i])
+			e.writefdATs(e.a.Frames[i])
+		}
+	}
 	e.writeIEND()
 	return e.err
 }

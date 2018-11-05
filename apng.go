@@ -5,9 +5,9 @@
 package apng
 
 type APNG struct {
-  Frames []Frame
-  // LoopCount defines the number of times an animation will be
-  // restarted during display.
-  // A LoopCount of 0 means to loop forever
-  LoopCount  uint
+	Frames []Frame
+	// LoopCount defines the number of times an animation will be
+	// restarted during display.
+	// A LoopCount of 0 means to loop forever
+	LoopCount uint
 }
