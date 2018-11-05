@@ -29,7 +29,7 @@ The Frame type contains an individual frame of an APNG. The following table prov
 
 | Signature                 | Description      |
 |---------------------------|------------------|
-| Img image.Image           | Frame image data. |
+| Image image.Image           | Frame image data. |
 | IsDefault bool            | Indicates if this frame is a default image that should not be included as part of the animation frames. May only be true for the first Frame. |
 | XOffset int               | Returns the x offset of the frame. |
 | YOffset int               | Returns the y offset of the frame. |
@@ -59,7 +59,7 @@ func main() {
 
   log.Printf("Found %d frames\n", len(a.Frames))
   for i, frame := range a.Frames {
-    b := frame.Img.Bounds()
+    b := frame.Image.Bounds()
     log.Printf("Frame %d: %dx%d\n", i, b.Max.X, b.Max.Y)
   }
 }

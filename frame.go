@@ -22,7 +22,7 @@ const (
 )
 
 type Frame struct {
-	Img              image.Image
+	Image              image.Image
 	width, height    int
 	XOffset, YOffset int
 	DelayNumerator   uint16

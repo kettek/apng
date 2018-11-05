@@ -913,7 +913,7 @@ func (d *decoder) parsefdAT(length uint32) (err error) {
 	}
 	d.crc.Write(d.tmp[:4])
 	d.idatLength = length - 4
-	d.a.Frames[d.frame_index].Img, err = d.decode()
+	d.a.Frames[d.frame_index].Image, err = d.decode()
 	if err != nil {
 		return err
 	}
@@ -922,7 +922,7 @@ func (d *decoder) parsefdAT(length uint32) (err error) {
 
 func (d *decoder) parseIDAT(length uint32) (err error) {
 	d.idatLength = length
-	d.a.Frames[d.frame_index].Img, err = d.decode()
+	d.a.Frames[d.frame_index].Image, err = d.decode()
 	if err != nil {
 		return err
 	}
@@ -1074,7 +1074,7 @@ func Decode(r io.Reader) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	return a.Frames[0].Img, nil
+	return a.Frames[0].Image, nil
 }
 
 // DecodeConfig returns the color model and dimensions of a PNG image without

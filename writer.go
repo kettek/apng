@@ -128,7 +128,7 @@ func (e *encoder) writeChunk(b []byte, name string) {
 }
 
 func (e *encoder) writeIHDR() {
-	b := e.a.Frames[0].Img.Bounds()
+	b := e.a.Frames[0].Image.Bounds()
 	binary.BigEndian.PutUint32(e.tmp[0:4], uint32(b.Dx()))
 	binary.BigEndian.PutUint32(e.tmp[4:8], uint32(b.Dy()))
 	// Set bit depth and color type.
@@ -179,7 +179,7 @@ func (e *encoder) writeacTL() {
 func (e *encoder) writefcTL(f Frame) {
 	binary.BigEndian.PutUint32(e.tmp[0:4], uint32(e.seq))
 	e.seq = e.seq + 1
-	b := f.Img.Bounds()
+	b := f.Image.Bounds()
 	binary.BigEndian.PutUint32(e.tmp[4:8], uint32(b.Dx()))
 	binary.BigEndian.PutUint32(e.tmp[8:12], uint32(b.Dy()))
 	binary.BigEndian.PutUint32(e.tmp[12:16], uint32(f.XOffset))
@@ -201,7 +201,7 @@ func (e *encoder) writefdATs(f Frame) {
 	} else {
 		e.bw.Reset(e)
 	}
-	e.err = e.writeImage(e.bw, f.Img, e.cb, levelToZlib(e.enc.CompressionLevel))
+	e.err = e.writeImage(e.bw, f.Image, e.cb, levelToZlib(e.enc.CompressionLevel))
 	if e.err != nil {
 		return
 	}
@@ -580,7 +580,7 @@ func (e *encoder) writeIDATs() {
 	} else {
 		e.bw.Reset(e)
 	}
-	e.err = e.writeImage(e.bw, e.a.Frames[0].Img, e.cb, levelToZlib(e.enc.CompressionLevel))
+	e.err = e.writeImage(e.bw, e.a.Frames[0].Image, e.cb, levelToZlib(e.enc.CompressionLevel))
 	if e.err != nil {
 		return
 	}
@@ -618,7 +618,7 @@ func (enc *Encoder) Encode(w io.Writer, a APNG) error {
 	// Obviously, negative widths and heights are invalid. Furthermore, the PNG
 	// spec section 11.2.2 says that zero is invalid. Excessively large images are
 	// also rejected.
-	mw, mh := int64(a.Frames[0].Img.Bounds().Dx()), int64(a.Frames[0].Img.Bounds().Dy())
+	mw, mh := int64(a.Frames[0].Image.Bounds().Dx()), int64(a.Frames[0].Image.Bounds().Dy())
 	if mw <= 0 || mh <= 0 || mw >= 1<<32 || mh >= 1<<32 {
 		return FormatError("invalid image size: " + strconv.FormatInt(mw, 10) + "x" + strconv.FormatInt(mh, 10))
 	}
@@ -642,8 +642,8 @@ func (enc *Encoder) Encode(w io.Writer, a APNG) error {
 
 	var pal color.Palette
 	// cbP8 encoding needs PalettedImage's ColorIndexAt method.
-	if _, ok := a.Frames[0].Img.(image.PalettedImage); ok {
-		pal, _ = a.Frames[0].Img.ColorModel().(color.Palette)
+	if _, ok := a.Frames[0].Image.(image.PalettedImage); ok {
+		pal, _ = a.Frames[0].Image.ColorModel().(color.Palette)
 	}
 	if pal != nil {
 		if len(pal) <= 2 {
@@ -656,19 +656,19 @@ func (enc *Encoder) Encode(w io.Writer, a APNG) error {
 			e.cb = cbP8
 		}
 	} else {
-		switch a.Frames[0].Img.ColorModel() {
+		switch a.Frames[0].Image.ColorModel() {
 		case color.GrayModel:
 			e.cb = cbG8
 		case color.Gray16Model:
 			e.cb = cbG16
 		case color.RGBAModel, color.NRGBAModel, color.AlphaModel:
-			if opaque(a.Frames[0].Img) {
+			if opaque(a.Frames[0].Image) {
 				e.cb = cbTC8
 			} else {
 				e.cb = cbTCA8
 			}
 		default:
-			if opaque(a.Frames[0].Img) {
+			if opaque(a.Frames[0].Image) {
 				e.cb = cbTC16
 			} else {
 				e.cb = cbTCA16
