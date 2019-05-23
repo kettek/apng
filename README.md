@@ -64,7 +64,7 @@ func main() {
 
 ```
 
-### DecodeFirst(io.Reader) (image.Image, error)
+### Decode(io.Reader) (image.Image, error)
 This method returns the Image of the default frame of an APNG file.
 
 ### Encode(io.Writer, APNG) error
