@@ -1,6 +1,8 @@
 # APNG golang library
 This `apng` package provides methods for decoding and encoding APNG files. It is based upon the work in the official "image/png" package.
 
+See [apngr](https://github.com/kettek/apngr) for an APNG extraction and combination tool using this library.
+
 **NOTE**: The decoder should work for most anything you throw at it. Malformed PNGs should result in an error message. The encoder currently doesn't handle differences of Image formats and similar and has not been tested as thoroughly.
 
 If a regular PNG file is read, the first Frame of the APNG returned by `DecodeAll(*File)` will be the PNG data.
