@@ -101,6 +101,7 @@ const (
 	dsSeentRNS
 	dsSeenacTL
 	dsSeenIDAT
+	dsSeenfdAT
 	dsSeenIEND
 )
 
@@ -350,28 +351,29 @@ func (d *decoder) Read(p []byte) (int, error) {
 		if _, err := io.ReadFull(d.r, d.tmp[:8]); err != nil {
 			return 0, err
 		}
-		if d.a.Frames[d.frame_index].IsDefault {
+
+		if d.stage < dsSeenfdAT {
 			d.idatLength = binary.BigEndian.Uint32(d.tmp[:4])
 			if string(d.tmp[4:8]) != "IDAT" {
-				return 0, FormatError("not enough pixel data")
+				return 0, FormatError(fmt.Sprintf("expected IDAT, found %s", string(d.tmp[4:8])))
 			}
 		} else {
 			d.idatLength = binary.BigEndian.Uint32(d.tmp[:4]) - 4
 			if string(d.tmp[4:8]) != "fdAT" {
-				return 0, FormatError("not enough pixel data")
+				return 0, FormatError(fmt.Sprintf("expected fdAT, found %s", string(d.tmp[4:8])))
 			}
 		}
 		d.crc.Reset()
 		d.crc.Write(d.tmp[4:8])
-		if !d.a.Frames[d.frame_index].IsDefault {
+		if d.stage >= dsSeenfdAT {
 			if _, err := io.ReadFull(d.r, d.tmp[:4]); err != nil {
 				return 0, err
 			}
-		} else {
+			d.crc.Write(d.tmp[:4])
 		}
 	}
 	if int(d.idatLength) < 0 {
-		return 0, UnsupportedError("IDAT chunk length overflow")
+		return 0, UnsupportedError("IDAT/fdAT chunk length overflow")
 	}
 	n, err := d.r.Read(p[:min(len(p), int(d.idatLength))])
 	d.crc.Write(p[:n])
@@ -886,14 +888,11 @@ func (d *decoder) parsefcTL(length uint32) (err error) {
 		return err
 	}
 
-	if d.stage >= dsSeenIDAT {
-		d.frame_index = d.frame_index + 1
-	} else {
-		d.a.Frames[d.frame_index].IsDefault = false
-	}
 	if d.frame_index >= len(d.a.Frames) {
 		d.a.Frames = append(d.a.Frames, Frame{})
 	}
+
+	d.a.Frames[d.frame_index].IsDefault = false
 	d.a.Frames[d.frame_index].width = int(int32(binary.BigEndian.Uint32(d.tmp[4:8])))
 	d.a.Frames[d.frame_index].height = int(int32(binary.BigEndian.Uint32(d.tmp[8:12])))
 	d.a.Frames[d.frame_index].XOffset = int(binary.BigEndian.Uint32(d.tmp[12:16]))
@@ -976,11 +975,15 @@ func (d *decoder) parseChunk() error {
 		}
 		return d.parseacTL(length)
 	case "fcTL":
+		if d.stage >= dsSeenIDAT {
+			d.frame_index = d.frame_index + 1
+		}
 		return d.parsefcTL(length)
 	case "fdAT":
 		if d.stage < dsSeenIDAT {
 			return chunkOrderError
 		}
+		d.stage = dsSeenfdAT
 		return d.parsefdAT(length)
 	case "IDAT":
 		if d.stage < dsSeenIHDR || d.stage > dsSeenIDAT || (d.stage == dsSeenIHDR && cbPaletted(d.cb)) {
@@ -996,7 +999,7 @@ func (d *decoder) parseChunk() error {
 		d.stage = dsSeenIDAT
 		return d.parseIDAT(length)
 	case "IEND":
-		if d.stage != dsSeenIDAT {
+		if d.stage < dsSeenIDAT {
 			return chunkOrderError
 		}
 		d.stage = dsSeenIEND
