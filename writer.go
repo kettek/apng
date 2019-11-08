@@ -662,13 +662,27 @@ func (enc *Encoder) Encode(w io.Writer, a APNG) error {
 		case color.Gray16Model:
 			e.cb = cbG16
 		case color.RGBAModel, color.NRGBAModel, color.AlphaModel:
-			if opaque(a.Frames[0].Image) {
+			isOpaque := true
+			for _, v := range a.Frames {
+				if !opaque(v.Image) {
+					isOpaque = false
+					break
+				}
+			}
+			if isOpaque {
 				e.cb = cbTC8
 			} else {
 				e.cb = cbTCA8
 			}
 		default:
-			if opaque(a.Frames[0].Image) {
+			isOpaque := true
+			for _, v := range a.Frames {
+				if !opaque(v.Image) {
+					isOpaque = false
+					break
+				}
+			}
+			if isOpaque {
 				e.cb = cbTC16
 			} else {
 				e.cb = cbTCA16
