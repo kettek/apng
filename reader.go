@@ -1086,6 +1086,7 @@ func DecodeConfig(r io.Reader) (image.Config, error) {
 	d := &decoder{
 		r:   r,
 		crc: crc32.NewIEEE(),
+		a:   APNG{Frames: make([]Frame, 1)},
 	}
 	if err := d.checkHeader(); err != nil {
 		if err == io.EOF {
