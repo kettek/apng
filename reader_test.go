@@ -310,7 +310,7 @@ func TestDimensionOverflow(t *testing.T) {
 }
 
 func TestReadAPNGWithDefaultFrame(t *testing.T) {
-	a, err := ReadAPNG("tests/WithDefaultFrame.png")
+	a, err := readAPNG("tests/WithDefaultFrame.png")
 	if err != nil {
 		t.Error(err)
 		return
@@ -328,7 +328,7 @@ func TestReadAPNGWithDefaultFrame(t *testing.T) {
 }
 
 func TestReadAPNGWithoutDefaultFrame(t *testing.T) {
-	a, err := ReadAPNG("tests/WithoutDefaultFrame.png")
+	a, err := readAPNG("tests/WithoutDefaultFrame.png")
 	if err != nil {
 		t.Error(err)
 		return
@@ -346,7 +346,7 @@ func TestReadAPNGWithoutDefaultFrame(t *testing.T) {
 }
 
 func TestReadAPNGWithMultipleIDATs(t *testing.T) {
-	a, err := ReadAPNG("tests/MultipleIDATs.png")
+	a, err := readAPNG("tests/MultipleIDATs.png")
 	if err != nil {
 		t.Error(err)
 		return
@@ -358,7 +358,7 @@ func TestReadAPNGWithMultipleIDATs(t *testing.T) {
 	}
 }
 
-func ReadAPNG(path string) (APNG, error) {
+func readAPNG(path string) (APNG, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return APNG{}, err

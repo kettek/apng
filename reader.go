@@ -99,7 +99,6 @@ const (
 	dsSeenIHDR
 	dsSeenPLTE
 	dsSeentRNS
-	dsSeenacTL
 	dsSeenIDAT
 	dsSeenfdAT
 	dsSeenIEND
@@ -109,9 +108,9 @@ const pngHeader = "\x89PNG\r\n\x1a\n"
 
 type decoder struct {
 	r             io.Reader
-	num_frames    uint32
+	numFrames     uint32
 	a             APNG
-	frame_index   int
+	frameIndex    int
 	crc           hash.Hash32
 	width, height int
 	depth         int
@@ -446,8 +445,8 @@ func (d *decoder) readImagePass(r io.Reader, pass int, allocateOnly bool) (image
 		width    int
 		height   int
 	)
-	width = d.a.Frames[d.frame_index].width
-	height = d.a.Frames[d.frame_index].height
+	width = d.a.Frames[d.frameIndex].width
+	height = d.a.Frames[d.frameIndex].height
 	if d.interlace == itAdam7 && !allocateOnly {
 		p := interlacing[pass]
 		// Add the multiplication factor and subtract one, effectively rounding up.
@@ -885,7 +884,7 @@ func (d *decoder) parseacTL(length uint32) (err error) {
 		return err
 	}
 
-	d.num_frames = binary.BigEndian.Uint32(d.tmp[:4])
+	d.numFrames = binary.BigEndian.Uint32(d.tmp[:4])
 	d.a.LoopCount = uint(binary.BigEndian.Uint32(d.tmp[4:8]))
 
 	d.crc.Write(d.tmp[:8])
@@ -900,19 +899,19 @@ func (d *decoder) parsefcTL(length uint32) (err error) {
 		return err
 	}
 
-	if d.frame_index >= len(d.a.Frames) {
+	if d.frameIndex >= len(d.a.Frames) {
 		d.a.Frames = append(d.a.Frames, Frame{})
 	}
 
-	d.a.Frames[d.frame_index].IsDefault = false
-	d.a.Frames[d.frame_index].width = int(int32(binary.BigEndian.Uint32(d.tmp[4:8])))
-	d.a.Frames[d.frame_index].height = int(int32(binary.BigEndian.Uint32(d.tmp[8:12])))
-	d.a.Frames[d.frame_index].XOffset = int(binary.BigEndian.Uint32(d.tmp[12:16]))
-	d.a.Frames[d.frame_index].YOffset = int(binary.BigEndian.Uint32(d.tmp[16:20]))
-	d.a.Frames[d.frame_index].DelayNumerator = binary.BigEndian.Uint16(d.tmp[20:22])
-	d.a.Frames[d.frame_index].DelayDenominator = binary.BigEndian.Uint16(d.tmp[22:24])
-	d.a.Frames[d.frame_index].DisposeOp = byte(d.tmp[24])
-	d.a.Frames[d.frame_index].BlendOp = byte(d.tmp[25])
+	d.a.Frames[d.frameIndex].IsDefault = false
+	d.a.Frames[d.frameIndex].width = int(int32(binary.BigEndian.Uint32(d.tmp[4:8])))
+	d.a.Frames[d.frameIndex].height = int(int32(binary.BigEndian.Uint32(d.tmp[8:12])))
+	d.a.Frames[d.frameIndex].XOffset = int(binary.BigEndian.Uint32(d.tmp[12:16]))
+	d.a.Frames[d.frameIndex].YOffset = int(binary.BigEndian.Uint32(d.tmp[16:20]))
+	d.a.Frames[d.frameIndex].DelayNumerator = binary.BigEndian.Uint16(d.tmp[20:22])
+	d.a.Frames[d.frameIndex].DelayDenominator = binary.BigEndian.Uint16(d.tmp[22:24])
+	d.a.Frames[d.frameIndex].DisposeOp = d.tmp[24]
+	d.a.Frames[d.frameIndex].BlendOp = d.tmp[25]
 
 	d.crc.Write(d.tmp[:26])
 	return d.verifyChecksum()
@@ -924,7 +923,7 @@ func (d *decoder) parsefdAT(length uint32) (err error) {
 	}
 	d.crc.Write(d.tmp[:4])
 	d.idatLength = length - 4
-	d.a.Frames[d.frame_index].Image, err = d.decode()
+	d.a.Frames[d.frameIndex].Image, err = d.decode()
 	if err != nil {
 		return err
 	}
@@ -933,7 +932,7 @@ func (d *decoder) parsefdAT(length uint32) (err error) {
 
 func (d *decoder) parseIDAT(length uint32) (err error) {
 	d.idatLength = length
-	d.a.Frames[d.frame_index].Image, err = d.decode()
+	d.a.Frames[d.frameIndex].Image, err = d.decode()
 	if err != nil {
 		return err
 	}
@@ -987,7 +986,7 @@ func (d *decoder) parseChunk() error {
 		return d.parseacTL(length)
 	case "fcTL":
 		if d.stage >= dsSeenIDAT {
-			d.frame_index = d.frame_index + 1
+			d.frameIndex = d.frameIndex + 1
 		}
 		return d.parsefcTL(length)
 	case "fdAT":
@@ -1053,16 +1052,16 @@ func (d *decoder) checkHeader() error {
 	return nil
 }
 
-// Decode reads an APNG file from r and returns it as an APNG
+// DecodeAll reads an APNG file from r and returns it as an APNG
 // Type. If the first frame returns true for IsDefault(), that
-// frame should not be part of the a.
+// frame should not be part of the result.
 // The type of Image returned depends on the PNG contents.
 func DecodeAll(r io.Reader) (APNG, error) {
 	d := &decoder{
-		r:           r,
-		crc:         crc32.NewIEEE(),
-		frame_index: 0,
-		a:           APNG{Frames: make([]Frame, 1)},
+		r:          r,
+		crc:        crc32.NewIEEE(),
+		frameIndex: 0,
+		a:          APNG{Frames: make([]Frame, 1)},
 	}
 	d.a.Frames[0].IsDefault = true
 	if err := d.checkHeader(); err != nil {
@@ -1143,8 +1142,8 @@ func DecodeConfig(r io.Reader) (image.Config, error) {
 	}
 	return image.Config{
 		ColorModel: cm,
-		Width:      int(d.a.Frames[0].width),
-		Height:     int(d.a.Frames[0].height),
+		Width:      d.a.Frames[0].width,
+		Height:     d.a.Frames[0].height,
 	}, nil
 }
 
