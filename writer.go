@@ -39,23 +39,24 @@ type EncoderBufferPool interface {
 type EncoderBuffer encoder
 
 type encoder struct {
-	enc        *Encoder
-	w          io.Writer
-	a          APNG
-	write_type int // 0 = IDAT, 1 = fdAT
-	seq        int
-	cb         int
-	err        error
-	header     [8]byte
-	footer     [4]byte
-	tmp        [4 * 256]byte
-	cr         [nFilter][]uint8
-	pr         []uint8
-	zw         *zlib.Writer
-	zwLevel    int
-	bw         *bufio.Writer
+	enc       *Encoder
+	w         io.Writer
+	a         APNG
+	writeType int // 0 = IDAT, 1 = fdAT
+	seq       int
+	cb        int
+	err       error
+	header    [8]byte
+	footer    [4]byte
+	tmp       [4 * 256]byte
+	cr        [nFilter][]uint8
+	pr        []uint8
+	zw        *zlib.Writer
+	zwLevel   int
+	bw        *bufio.Writer
 }
 
+// CompressionLevel indicates the compression level.
 type CompressionLevel int
 
 const (
@@ -184,15 +185,15 @@ func (e *encoder) writefcTL(f Frame) {
 	binary.BigEndian.PutUint32(e.tmp[8:12], uint32(b.Dy()))
 	binary.BigEndian.PutUint32(e.tmp[12:16], uint32(f.XOffset))
 	binary.BigEndian.PutUint32(e.tmp[16:20], uint32(f.YOffset))
-	binary.BigEndian.PutUint16(e.tmp[20:22], uint16(f.DelayNumerator))
-	binary.BigEndian.PutUint16(e.tmp[22:24], uint16(f.DelayDenominator))
+	binary.BigEndian.PutUint16(e.tmp[20:22], f.DelayNumerator)
+	binary.BigEndian.PutUint16(e.tmp[22:24], f.DelayDenominator)
 	e.tmp[24] = f.DisposeOp
 	e.tmp[25] = f.BlendOp
 	e.writeChunk(e.tmp[:26], "fcTL")
 }
 
 func (e *encoder) writefdATs(f Frame) {
-	e.write_type = 1
+	e.writeType = 1
 	if e.err != nil {
 		return
 	}
@@ -237,7 +238,7 @@ func (e *encoder) writePLTEAndTRNS(p color.Palette) {
 // This method should only be called from writeIDATs (via writeImage).
 // No other code should treat an encoder as an io.Writer.
 func (e *encoder) Write(b []byte) (int, error) {
-	if e.write_type == 0 {
+	if e.writeType == 0 {
 		e.writeChunk(b, "IDAT")
 	} else {
 		c := make([]byte, 4)
@@ -339,7 +340,6 @@ func filter(cr *[nFilter][]byte, pr []byte, bpp int) int {
 		}
 	}
 	if sum < best {
-		best = sum
 		filter = ftAverage
 	}
 
@@ -478,10 +478,11 @@ func (e *encoder) writeImage(w io.Writer, m image.Image, cb int, level int) erro
 
 			var a uint8
 			var c int
+			pixelsPerByte := 8 / bitsPerPixel
 			for x := b.Min.X; x < b.Max.X; x++ {
 				a = a<<uint(bitsPerPixel) | pi.ColorIndexAt(x, y)
 				c++
-				if c == 8/bitsPerPixel {
+				if c == pixelsPerByte {
 					cr[0][i] = a
 					i += 1
 					a = 0
@@ -489,7 +490,7 @@ func (e *encoder) writeImage(w io.Writer, m image.Image, cb int, level int) erro
 				}
 			}
 			if c != 0 {
-				for c != 8/bitsPerPixel {
+				for c != pixelsPerByte {
 					a = a << uint(bitsPerPixel)
 					c++
 				}
@@ -571,7 +572,7 @@ func (e *encoder) writeImage(w io.Writer, m image.Image, cb int, level int) erro
 
 // Write the actual image data to one or more IDAT chunks.
 func (e *encoder) writeIDATs() {
-	e.write_type = 0
+	e.writeType = 0
 	if e.err != nil {
 		return
 	}

@@ -11,24 +11,24 @@ If a regular PNG file is read, the first Frame of the APNG returned by `DecodeAl
 ### APNG
 The APNG type contains the frames of a decoded `.apng` file, along with any important properties. It may also be created and used for Encoding.
 
-| Signature                 | Description                   |
-|---------------------------|-------------------------------|
-| Frames []Frame            | The stored frames of the APNG.|
-| LoopCount uint            | The number of times an animation should be restarted during display. A value of 0 means to loop forever.   |
+| Signature      | Description                                                                                              |
+|----------------|----------------------------------------------------------------------------------------------------------|
+| Frames []Frame | The stored frames of the APNG.                                                                           |
+| LoopCount uint | The number of times an animation should be restarted during display. A value of 0 means to loop forever. |
 
 ### Frame
 The Frame type contains an individual frame of an APNG. The following table provides the important properties and methods.
 
-| Signature                 | Description      |
-|---------------------------|------------------|
-| Image image.Image           | Frame image data. |
-| IsDefault bool            | Indicates if this frame is a default image that should not be included as part of the animation frames. May only be true for the first Frame. |
-| XOffset int               | Returns the x offset of the frame. |
-| YOffset int               | Returns the y offset of the frame. |
-| DelayNumerator int        | Returns the delay numerator.       |
-| DelayDenominator int      | Returns the delay denominator.     |
-| DisposeOp byte           | Returns the frame disposal operation. May be `apng.DISPOSE_OP_NONE`, `apng.DISPOSE_OP_BACKGROUND`, or `apng.DISPOSE_OP_PREVIOUS`. See the [APNG Specification](https://wiki.mozilla.org/APNG_Specification#.60fcTL.60:_The_Frame_Control_Chunk) for more information. |
-| BlendOp byte              | Returns the frame blending operation. May be `apng.BLEND_OP_SOURCE` or `apng.BLEND_OP_OVER`. See the [APNG Specification](https://wiki.mozilla.org/APNG_Specification#.60fcTL.60:_The_Frame_Control_Chunk) for more information. |
+| Signature            | Description                                                                                                                         |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| Image image.Image    | Frame image data.                                                                                                                   |
+| IsDefault bool       | Indicates if this frame is a default image that should not be included as part of the animation frames. May only be true for the first Frame. |
+| XOffset int          | Returns the x offset of the frame.                                                                                                  |
+| YOffset int          | Returns the y offset of the frame.                                                                                                  |
+| DelayNumerator int   | Returns the delay numerator.                                                                                                        |
+| DelayDenominator int | Returns the delay denominator.                                                                                                      |
+| DisposeOp byte       | Returns the frame disposal operation. May be `apng.DISPOSE_OP_NONE`, `apng.DISPOSE_OP_BACKGROUND`, or `apng.DISPOSE_OP_PREVIOUS`. See the [APNG Specification](https://wiki.mozilla.org/APNG_Specification#.60fcTL.60:_The_Frame_Control_Chunk) for more information. |
+| BlendOp byte         | Returns the frame blending operation. May be `apng.BLEND_OP_SOURCE` or `apng.BLEND_OP_OVER`. See the [APNG Specification](https://wiki.mozilla.org/APNG_Specification#.60fcTL.60:_The_Frame_Control_Chunk) for more information. |
 
 ## Methods
 ### DecodeAll(io.Reader) (APNG, error)
@@ -39,9 +39,9 @@ This method returns an APNG type containing the frames and associated data withi
 package main
 
 import (
-  "github.com/kettek/apng"
-  "os"
   "log"
+  "os"
+  "github.com/kettek/apng"
 )
 
 func main() {
@@ -77,9 +77,9 @@ This method writes the passed APNG object to the given io.Writer as an APNG bina
 package main
 
 import (
-  "github.com/kettek/apng"
   "image/png"
   "os"
+  "github.com/kettek/apng"
 )
 
 func main() {
