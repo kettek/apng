@@ -5,6 +5,7 @@
 package apng
 
 import (
+	"image/color"
 	"os"
 	"testing"
 )
@@ -71,4 +72,32 @@ func ReadAPNG(path string) (APNG, error) {
 	}
 
 	return a, err
+}
+
+func TestDecodeConfig(t *testing.T) {
+	f, err := os.Open("tests/WithDefaultFrame.png")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	defer f.Close()
+
+	cfg, err := DecodeConfig(f)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if cfg.Width != 200 {
+		t.Error("Expected 200 pixels wide.")
+		return
+	}
+	if cfg.Height != 239 {
+		t.Error("Expected 239 pixels high.")
+		return
+	}
+	if cfg.ColorModel != color.RGBAModel {
+		t.Error("Expected RGBA color model.")
+		return
+	}
 }
