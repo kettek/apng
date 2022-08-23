@@ -364,21 +364,21 @@ func zeroMemory(v []uint8) {
 }
 
 func (e *encoder) writeImage(w io.Writer, m image.Image, cb int, level CompressionLevel) error {
-	if e.zw == nil {
+	if e.zw == nil || e.zwLevel != level {
 		if e.enc.CompressionWriter != nil {
 			zw, err := e.enc.CompressionWriter(w)
 			if err != nil {
 				return err
 			}
 			e.zw = zw
-		} else if e.zwLevel != level {
+		} else {
 			zw, err := zlib.NewWriterLevel(w, levelToZlib(level))
 			if err != nil {
 				return err
 			}
 			e.zw = zw
-			e.zwLevel = level
 		}
+		e.zwLevel = level
 	} else {
 		e.zw.Reset(w)
 	}
