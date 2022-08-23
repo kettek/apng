@@ -122,5 +122,5 @@ enc := apng.Encoder{
 		return NewCustomZlibWriter(w)
 	},
 }
-enc.Encode(f, a)
+enc.Encode(out, a)
 ```
