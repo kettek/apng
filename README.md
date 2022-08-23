@@ -116,7 +116,7 @@ func main() {
 ### Custom Compression
 A custom compression writer can be used instead of the default zlib writer. This cane be done by creating a specific apng Encoder and assigning a construction function to the `CompressionWriter` field:
 
-```
+```go
 enc := apng.Encoder{
 	CompressionWriter: func(w io.Writer) (apng.CompressionWriter, error) {
 		return NewCustomZlibWriter(w)
