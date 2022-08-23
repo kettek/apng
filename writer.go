@@ -26,9 +26,9 @@ type Encoder struct {
 	// EncoderBuffers when encoding an image.
 	BufferPool EncoderBufferPool
 
-	// NewCompressionWriter optionally provides a external zlib compression
+	// CompressionWriter optionally provides a external zlib compression
 	// writer for writing PNG image data.
-	NewCompressionWriter func(w io.Writer) (CompressionWriter, error)
+	CompressionWriter func(w io.Writer) (CompressionWriter, error)
 }
 
 // CompressionWriter zlib compression writer interface.
@@ -365,8 +365,8 @@ func zeroMemory(v []uint8) {
 
 func (e *encoder) writeImage(w io.Writer, m image.Image, cb int, level CompressionLevel) error {
 	if e.zw == nil {
-		if e.enc.NewCompressionWriter != nil {
-			zw, err := e.enc.NewCompressionWriter(w)
+		if e.enc.CompressionWriter != nil {
+			zw, err := e.enc.CompressionWriter(w)
 			if err != nil {
 				return err
 			}
