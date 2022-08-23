@@ -25,6 +25,17 @@ type Encoder struct {
 	// BufferPool optionally specifies a buffer pool to get temporary
 	// EncoderBuffers when encoding an image.
 	BufferPool EncoderBufferPool
+
+	// CompressionWriter optionally provides a external zlib compression
+	// writer for writing PNG image data.
+	CompressionWriter func(w io.Writer) (CompressionWriter, error)
+}
+
+// CompressionWriter zlib compression writer interface.
+type CompressionWriter interface {
+	Write(p []byte) (n int, err error)
+	Reset(w io.Writer)
+	Close() error
 }
 
 // EncoderBufferPool is an interface for getting and returning temporary
@@ -51,8 +62,8 @@ type encoder struct {
 	tmp       [4 * 256]byte
 	cr        [nFilter][]uint8
 	pr        []uint8
-	zw        *zlib.Writer
-	zwLevel   int
+	zw        CompressionWriter
+	zwLevel   CompressionLevel
 	bw        *bufio.Writer
 }
 
@@ -202,7 +213,7 @@ func (e *encoder) writefdATs(f Frame) {
 	} else {
 		e.bw.Reset(e)
 	}
-	e.err = e.writeImage(e.bw, f.Image, e.cb, levelToZlib(e.enc.CompressionLevel))
+	e.err = e.writeImage(e.bw, f.Image, e.cb, e.enc.CompressionLevel)
 	if e.err != nil {
 		return
 	}
@@ -352,14 +363,22 @@ func zeroMemory(v []uint8) {
 	}
 }
 
-func (e *encoder) writeImage(w io.Writer, m image.Image, cb int, level int) error {
-	if e.zw == nil || e.zwLevel != level {
-		zw, err := zlib.NewWriterLevel(w, level)
-		if err != nil {
-			return err
+func (e *encoder) writeImage(w io.Writer, m image.Image, cb int, level CompressionLevel) error {
+	if e.zw == nil {
+		if e.enc.CompressionWriter != nil {
+			zw, err := e.enc.CompressionWriter(w)
+			if err != nil {
+				return err
+			}
+			e.zw = zw
+		} else if e.zwLevel != level {
+			zw, err := zlib.NewWriterLevel(w, levelToZlib(level))
+			if err != nil {
+				return err
+			}
+			e.zw = zw
+			e.zwLevel = level
 		}
-		e.zw = zw
-		e.zwLevel = level
 	} else {
 		e.zw.Reset(w)
 	}
@@ -581,7 +600,7 @@ func (e *encoder) writeIDATs() {
 	} else {
 		e.bw.Reset(e)
 	}
-	e.err = e.writeImage(e.bw, e.a.Frames[0].Image, e.cb, levelToZlib(e.enc.CompressionLevel))
+	e.err = e.writeImage(e.bw, e.a.Frames[0].Image, e.cb, e.enc.CompressionLevel)
 	if e.err != nil {
 		return
 	}
