@@ -659,6 +659,7 @@ func (enc *Encoder) Encode(w io.Writer, a APNG) error {
 	e.enc = enc
 	e.w = w
 	e.a = a
+	e.seq = 0
 
 	var pal color.Palette
 	// cbP8 encoding needs PalettedImage's ColorIndexAt method.
