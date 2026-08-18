@@ -903,9 +903,28 @@ func (d *decoder) parsefcTL(length uint32) (err error) {
 		d.a.Frames = append(d.a.Frames, Frame{})
 	}
 
+	// Validate the frame dimensions the same way parseIHDR does. The fcTL
+	// width and height drive the per-frame image allocation in readImagePass,
+	// so unchecked values here allow a malformed file to request a non-positive
+	// or absurdly large frame, panicking in image.NewXxx.
+	w := int32(binary.BigEndian.Uint32(d.tmp[4:8]))
+	h := int32(binary.BigEndian.Uint32(d.tmp[8:12]))
+	if w <= 0 || h <= 0 {
+		return FormatError("non-positive dimension")
+	}
+	nPixels64 := int64(w) * int64(h)
+	nPixels := int(nPixels64)
+	if nPixels64 != int64(nPixels) {
+		return UnsupportedError("dimension overflow")
+	}
+	// There can be up to 8 bytes per pixel, for 16 bits per channel RGBA.
+	if nPixels != (nPixels*8)/8 {
+		return UnsupportedError("dimension overflow")
+	}
+
 	d.a.Frames[d.frameIndex].IsDefault = false
-	d.a.Frames[d.frameIndex].width = int(int32(binary.BigEndian.Uint32(d.tmp[4:8])))
-	d.a.Frames[d.frameIndex].height = int(int32(binary.BigEndian.Uint32(d.tmp[8:12])))
+	d.a.Frames[d.frameIndex].width = int(w)
+	d.a.Frames[d.frameIndex].height = int(h)
 	d.a.Frames[d.frameIndex].XOffset = int(binary.BigEndian.Uint32(d.tmp[12:16]))
 	d.a.Frames[d.frameIndex].YOffset = int(binary.BigEndian.Uint32(d.tmp[16:20]))
 	d.a.Frames[d.frameIndex].DelayNumerator = binary.BigEndian.Uint16(d.tmp[20:22])
