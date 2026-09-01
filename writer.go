@@ -249,6 +249,7 @@ func (e *encoder) writePLTEAndTRNS(p color.Palette) {
 // This method should only be called from writeIDATs (via writeImage).
 // No other code should treat an encoder as an io.Writer.
 func (e *encoder) Write(b []byte) (int, error) {
+	n := len(b)
 	if e.writeType == 0 {
 		e.writeChunk(b, "IDAT")
 	} else {
@@ -261,7 +262,7 @@ func (e *encoder) Write(b []byte) (int, error) {
 	if e.err != nil {
 		return 0, e.err
 	}
-	return len(b), nil
+	return n, nil
 }
 
 // Chooses the filter to use for encoding the current row, and applies it.
